@@ -233,6 +233,22 @@ static ASTNode* parseFactor() {
         return node;
     }
 
+    // BOOLEANOS
+    if (
+        currentToken.type == TOKEN_TRUE ||
+        currentToken.type == TOKEN_FALSE
+    ) {
+
+        node = createNode(
+            "BOOLEAN",
+            currentToken.lexeme
+        );
+
+        advanceToken();
+
+        return node;
+    }
+
     syntaxError("Invalid factor");
 
     return NULL;
@@ -618,7 +634,18 @@ static ASTNode* parseStatement() {
         syntaxError("Statement cannot start with number");
     }
 
-    syntaxError("Unknown statement");
+    /*
+    |--------------------------------------------------------------------------
+    | EOF O TOKENS VACÍOS
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        currentToken.type == TOKEN_EOF
+    ) {
+
+        return NULL;
+    }
 
     return NULL;
 }
@@ -639,7 +666,10 @@ ASTNode* parseProgram() {
 
     ASTNode* current = NULL;
 
-    while (currentToken.type != TOKEN_EOF) {
+    while (
+        currentToken.type != TOKEN_EOF &&
+        currentToken.type != TOKEN_ERROR
+    ) {
 
         ASTNode* stmt = parseStatement();
 

@@ -7,6 +7,66 @@
 
 /*
 |--------------------------------------------------------------------------
+| getExpressionType()
+|--------------------------------------------------------------------------
+| Devuelve el tipo de una expresión.
+|--------------------------------------------------------------------------
+*/
+
+static const char* getExpressionType(ASTNode* node) {
+
+    if (node == NULL)
+        return "undefined";
+
+    /*
+    |--------------------------------------------------------------------------
+    | NÚMEROS
+    |--------------------------------------------------------------------------
+    */
+
+    if (strcmp(node->type, "NUMBER") == 0) {
+
+        return "int";
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | BOOLEANOS
+    |--------------------------------------------------------------------------
+    */
+
+    if (strcmp(node->type, "BOOLEAN") == 0) {
+
+        return "bool";
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | IDENTIFICADORES
+    |--------------------------------------------------------------------------
+    */
+
+    if (strcmp(node->type, "IDENTIFIER") == 0) {
+
+        return getSymbolType(node->value);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | OPERADORES
+    |--------------------------------------------------------------------------
+    */
+
+    if (strcmp(node->type, "OPERATOR") == 0) {
+
+        return getExpressionType(node->left);
+    }
+
+    return "undefined";
+}
+
+/*
+|--------------------------------------------------------------------------
 | semanticCheck()
 |--------------------------------------------------------------------------
 | Recorre AST y valida semántica.
@@ -68,6 +128,27 @@ void semanticCheck(ASTNode* root) {
 
             printf(
                 "Semantic Error: Variable '%s' not declared\n",
+                varName
+            );
+
+            exit(1);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDAR TIPOS
+        |--------------------------------------------------------------------------
+        */
+
+        const char* variableType = getSymbolType(varName);
+
+        const char* expressionType =
+            getExpressionType(root->right);
+
+        if (strcmp(variableType, expressionType) != 0) {
+
+            printf(
+                "Semantic Error: Type mismatch in assignment to '%s'\n",
                 varName
             );
 
