@@ -172,4 +172,8 @@ void semanticCheck(ASTNode* root) {
     semanticCheck(root->right);
 
     semanticCheck(root->next);
+
+    semanticCheck(root->extra);
+    
+    semanticCheck(root->extra2);
 }

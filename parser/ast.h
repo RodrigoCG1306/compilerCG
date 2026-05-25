@@ -20,6 +20,8 @@ typedef struct ASTNode {
     struct ASTNode* left;
     struct ASTNode* right;
     struct ASTNode* next;
+    struct ASTNode* extra;
+    struct ASTNode* extra2;
 
 } ASTNode;
 
