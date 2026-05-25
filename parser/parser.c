@@ -186,38 +186,142 @@ static void match(TokenType expected) {
 
 /*
 |--------------------------------------------------------------------------
+| parseFactor()
+|--------------------------------------------------------------------------
+| factor:
+|
+| NUMBER
+| IDENTIFIER
+|--------------------------------------------------------------------------
+*/
+
+static ASTNode* parseFactor() {
+
+    ASTNode* node;
+
+    // NÚMERO
+    if (currentToken.type == TOKEN_NUMBER) {
+
+        node = createNode(
+            "NUMBER",
+            currentToken.lexeme
+        );
+
+        advanceToken();
+
+        return node;
+    }
+
+    // IDENTIFICADOR
+    if (currentToken.type == TOKEN_IDENTIFIER) {
+
+        node = createNode(
+            "IDENTIFIER",
+            currentToken.lexeme
+        );
+
+        advanceToken();
+
+        return node;
+    }
+
+    syntaxError("Invalid factor");
+
+    return NULL;
+}
+
+/*
+|--------------------------------------------------------------------------
+| parseTerm()
+|--------------------------------------------------------------------------
+| term:
+|
+| factor
+| factor * factor
+| factor / factor
+|--------------------------------------------------------------------------
+*/
+
+static ASTNode* parseTerm() {
+
+    ASTNode* left = parseFactor();
+
+    while (
+        currentToken.type == TOKEN_MULT ||
+        currentToken.type == TOKEN_DIV
+    ) {
+
+        ASTNode* opNode;
+
+        // *
+        if (currentToken.type == TOKEN_MULT) {
+
+            opNode = createNode("OPERATOR", "*");
+        }
+
+        // /
+        else {
+
+            opNode = createNode("OPERATOR", "/");
+        }
+
+        advanceToken();
+
+        opNode->left = left;
+
+        opNode->right = parseFactor();
+
+        left = opNode;
+    }
+
+    return left;
+}
+
+/*
+|--------------------------------------------------------------------------
 | parseExpression()
 |--------------------------------------------------------------------------
-| Por ahora:
-| expresión = número o identificador
+| expression:
+|
+| term
+| term + term
+| term - term
 |--------------------------------------------------------------------------
 */
 
 static ASTNode* parseExpression() {
 
-    ASTNode* node;
+    ASTNode* left = parseTerm();
 
-    if (currentToken.type == TOKEN_NUMBER) {
+    while (
+        currentToken.type == TOKEN_PLUS ||
+        currentToken.type == TOKEN_MINUS
+    ) {
 
-        node = createNode("NUMBER", currentToken.lexeme);
+        ASTNode* opNode;
+
+        // +
+        if (currentToken.type == TOKEN_PLUS) {
+
+            opNode = createNode("OPERATOR", "+");
+        }
+
+        // -
+        else {
+
+            opNode = createNode("OPERATOR", "-");
+        }
 
         advanceToken();
 
-        return node;
+        opNode->left = left;
+
+        opNode->right = parseTerm();
+
+        left = opNode;
     }
 
-    if (currentToken.type == TOKEN_IDENTIFIER) {
-
-        node = createNode("IDENTIFIER", currentToken.lexeme);
-
-        advanceToken();
-
-        return node;
-    }
-
-    syntaxError("Invalid expression");
-
-    return NULL;
+    return left;
 }
 
 /*
