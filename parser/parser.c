@@ -137,6 +137,84 @@ static ASTNode* parseAssignment() {
 
 /*
 |--------------------------------------------------------------------------
+| parseDeclaration()
+|--------------------------------------------------------------------------
+| declaration:
+|
+| int x;
+| float y;
+| bool flag;
+|--------------------------------------------------------------------------
+*/
+
+static ASTNode* parseDeclaration() {
+
+    ASTNode* node;
+
+    // GUARDAR TIPO
+    if (currentToken.type == TOKEN_INT) {
+
+        node = createNode("DECLARATION", "int");
+    }
+    else if (currentToken.type == TOKEN_FLOAT) {
+
+        node = createNode("DECLARATION", "float");
+    }
+    else {
+
+        node = createNode("DECLARATION", "bool");
+    }
+
+    // AVANZAR TIPO
+    advanceToken();
+
+    // IDENTIFICADOR
+    node->left = createNode(
+        "IDENTIFIER",
+        currentToken.lexeme
+    );
+
+    match(TOKEN_IDENTIFIER);
+
+    // ;
+    match(TOKEN_SEMICOLON);
+
+    return node;
+}
+
+/*
+|--------------------------------------------------------------------------
+| parseStatement()
+|--------------------------------------------------------------------------
+| Decide qué tipo de instrucción analizar.
+|--------------------------------------------------------------------------
+*/
+
+static ASTNode* parseStatement() {
+
+    // DECLARACIONES
+    if (
+        currentToken.type == TOKEN_INT ||
+        currentToken.type == TOKEN_FLOAT ||
+        currentToken.type == TOKEN_BOOL
+    ) {
+
+        return parseDeclaration();
+    }
+
+    // ASIGNACIONES
+    if (currentToken.type == TOKEN_IDENTIFIER) {
+
+        return parseAssignment();
+    }
+
+    syntaxError("Invalid statement");
+
+    return NULL;
+}
+
+/*
+|--------------------------------------------------------------------------
 | parseProgram()
 |--------------------------------------------------------------------------
 | Punto principal del parser.
@@ -150,15 +228,7 @@ ASTNode* parseProgram() {
     ASTNode* root = createNode("PROGRAM", "ROOT");
 
     while (currentToken.type != TOKEN_EOF) {
-
-        if (currentToken.type == TOKEN_IDENTIFIER) {
-
-            root->left = parseAssignment();
-        }
-        else {
-
-            syntaxError("Expected assignment");
-        }
+        root->left = parseStatement();
     }
 
     return root;
