@@ -293,12 +293,12 @@ Token getNextToken() {
     | ERROR LÉXICO
     |--------------------------------------------------------------------------
     */
-   printf(
-    "[LEXER ERROR] Unknown character: ASCII(%d) '%c' at line %d\n",
-    c,
-    c,
-    line
-);
+   /*printf(
+        "[LEXER ERROR] Unknown character: ASCII(%d) '%c' at line %d\n",
+        c,
+        c,
+        line
+    );*/
 
     return makeToken(TOKEN_ERROR, "ERROR");
 }

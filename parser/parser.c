@@ -422,6 +422,40 @@ static ASTNode* parseIf() {
 
 /*
 |--------------------------------------------------------------------------
+| parseWhile()
+|--------------------------------------------------------------------------
+| while:
+|
+| while (expression) {
+|     statements
+| }
+|--------------------------------------------------------------------------
+*/
+
+static ASTNode* parseWhile() {
+
+    ASTNode* whileNode = createNode("WHILE", "while");
+
+    // while
+    match(TOKEN_WHILE);
+
+    // (
+    match(TOKEN_LPAREN);
+
+    // condición
+    whileNode->left = parseExpression();
+
+    // )
+    match(TOKEN_RPAREN);
+
+    // bloque
+    whileNode->right = parseBlock();
+
+    return whileNode;
+}
+
+/*
+|--------------------------------------------------------------------------
 | parseAssignment()
 |--------------------------------------------------------------------------
 | assignment:
@@ -510,11 +544,11 @@ static ASTNode* parseDeclaration() {
 */
 
 static ASTNode* parseStatement() {
-    printf(
+   /* printf(
         "[DEBUG] parseStatement -> token: '%s' line: %d\n",
         currentToken.lexeme,
         currentToken.line
-    );
+    );*/
 
     /*
     |--------------------------------------------------------------------------
@@ -539,6 +573,17 @@ static ASTNode* parseStatement() {
 
     if (currentToken.type == TOKEN_IF) {
         return parseIf();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | WHILE
+    |--------------------------------------------------------------------------
+    */
+
+    if (currentToken.type == TOKEN_WHILE) {
+
+        return parseWhile();
     }
 
     /*
