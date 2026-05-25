@@ -47,21 +47,140 @@ static void syntaxError(const char* message) {
 
 /*
 |--------------------------------------------------------------------------
+| tokenToString()
+|--------------------------------------------------------------------------
+| Convierte un TokenType en texto legible.
+|--------------------------------------------------------------------------
+*/
+
+static const char* tokenToString(TokenType type) {
+
+    switch (type) {
+
+        case TOKEN_INT:
+            return "int";
+
+        case TOKEN_FLOAT:
+            return "float";
+
+        case TOKEN_BOOL:
+            return "bool";
+
+        case TOKEN_IDENTIFIER:
+            return "identifier";
+
+        case TOKEN_NUMBER:
+            return "number";
+
+        case TOKEN_ASSIGN:
+            return "=";
+
+        case TOKEN_SEMICOLON:
+            return ";";
+
+        case TOKEN_PLUS:
+            return "+";
+
+        case TOKEN_MINUS:
+            return "-";
+
+        case TOKEN_MULT:
+            return "*";
+
+        case TOKEN_DIV:
+            return "/";
+
+        case TOKEN_LPAREN:
+            return "(";
+
+        case TOKEN_RPAREN:
+            return ")";
+
+        case TOKEN_LBRACE:
+            return "{";
+
+        case TOKEN_RBRACE:
+            return "}";
+
+        case TOKEN_IF:
+            return "if";
+
+        case TOKEN_ELSE:
+            return "else";
+
+        case TOKEN_WHILE:
+            return "while";
+
+        case TOKEN_FOR:
+            return "for";
+
+        case TOKEN_DO:
+            return "do";
+
+        case TOKEN_EOF:
+            return "EOF";
+
+        default:
+            return "unknown";
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
 | match()
 |--------------------------------------------------------------------------
 | Verifica que el token actual sea el esperado.
+|
+| Parámetro:
+| expected -> tipo de token que el parser espera encontrar.
+|
+| Funcionamiento:
+|
+| 1. Compara el token actual con el esperado.
+| 2. Si coinciden:
+|       - consume el token
+|       - avanza al siguiente
+|
+| 3. Si NO coinciden:
+|       - muestra error sintáctico descriptivo
+|       - termina la ejecución
+|
+| Ejemplo:
+|
+| Código:
+|     x = 10;
+|
+| El parser espera:
+|     IDENTIFIER -> '=' -> NUMBER -> ';'
+|
+| Si falta ';':
+|
+|     x = 10
+|
+| Resultado:
+|     Syntax Error: Expected ';' but got 'EOF'
 |--------------------------------------------------------------------------
 */
 
 static void match(TokenType expected) {
 
+    // TOKEN CORRECTO
     if (currentToken.type == expected) {
 
         advanceToken();
     }
+
+    // ERROR SINTÁCTICO
     else {
 
-        syntaxError("Unexpected token");
+        printf(
+            "Syntax Error: Expected '%s' but got '%s' at line %d\n",
+            tokenToString(expected),
+            currentToken.lexeme,
+            currentToken.line
+        );
+
+        exit(1);
     }
 }
 
@@ -192,7 +311,12 @@ static ASTNode* parseDeclaration() {
 
 static ASTNode* parseStatement() {
 
-    // DECLARACIONES
+    /*
+    |--------------------------------------------------------------------------
+    | DECLARACIONES
+    |--------------------------------------------------------------------------
+    */
+
     if (
         currentToken.type == TOKEN_INT ||
         currentToken.type == TOKEN_FLOAT ||
@@ -202,13 +326,39 @@ static ASTNode* parseStatement() {
         return parseDeclaration();
     }
 
-    // ASIGNACIONES
+    /*
+    |--------------------------------------------------------------------------
+    | ASIGNACIONES
+    |--------------------------------------------------------------------------
+    */
+
     if (currentToken.type == TOKEN_IDENTIFIER) {
 
         return parseAssignment();
     }
 
-    syntaxError("Invalid statement");
+    /*
+    |--------------------------------------------------------------------------
+    | ERRORES ESPECÍFICOS
+    |--------------------------------------------------------------------------
+    */
+
+    if (currentToken.type == TOKEN_SEMICOLON) {
+
+        syntaxError("Unexpected ';'");
+    }
+
+    if (currentToken.type == TOKEN_ASSIGN) {
+
+        syntaxError("Assignment without variable");
+    }
+
+    if (currentToken.type == TOKEN_NUMBER) {
+
+        syntaxError("Statement cannot start with number");
+    }
+
+    syntaxError("Unknown statement");
 
     return NULL;
 }
@@ -227,8 +377,26 @@ ASTNode* parseProgram() {
 
     ASTNode* root = createNode("PROGRAM", "ROOT");
 
+    ASTNode* current = NULL;
+
     while (currentToken.type != TOKEN_EOF) {
-        root->left = parseStatement();
+
+        ASTNode* statement = parseStatement();
+
+        // PRIMER STATEMENT
+        if (root->left == NULL) {
+
+            root->left = statement;
+
+            current = statement;
+        }
+        else {
+
+            // ENCADENAR SIGUIENTE
+            current->right = statement;
+
+            current = statement;
+        }
     }
 
     return root;
