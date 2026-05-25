@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "lexer.h"
 
@@ -73,7 +74,11 @@ static char advance() {
 |--------------------------------------------------------------------------
 | skipSpaces()
 |--------------------------------------------------------------------------
-| Ignora espacios, tabs y saltos de línea.
+| Ignora:
+| - espacios
+| - tabs
+| - saltos de línea
+| - comentarios multilinea
 |--------------------------------------------------------------------------
 */
 
@@ -83,7 +88,12 @@ static void skipSpaces() {
 
         char c = peek();
 
-        // ESPACIOS
+        /*
+        |--------------------------------------------------------------------------
+        | ESPACIOS Y SALTOS
+        |--------------------------------------------------------------------------
+        */
+
         if (
             c == ' '  ||
             c == '\t' ||
@@ -98,6 +108,62 @@ static void skipSpaces() {
 
             advance();
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | COMENTARIOS MULTILINEA
+        |--------------------------------------------------------------------------
+        */
+
+        else if (
+            c == '/' &&
+            src[pos + 1] == '*'
+        ) {
+
+            // CONSUMIR /*
+            advance();
+            advance();
+
+            // LEER HASTA */
+            while (1) {
+
+                // FIN INESPERADO
+                if (peek() == '\0') {
+
+                    printf(
+                        "Lexer Error: Unterminated comment at line %d\n",
+                        line
+                    );
+
+                    exit(1);
+                }
+
+                // CONTAR LÍNEAS
+                if (peek() == '\n') {
+                    line++;
+                }
+
+                // ENCONTRAR */
+                if (
+                    peek() == '*' &&
+                    src[pos + 1] == '/'
+                ) {
+
+                    advance();
+                    advance();
+
+                    break;
+                }
+
+                advance();
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | FIN
+        |--------------------------------------------------------------------------
+        */
 
         else {
 
