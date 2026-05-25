@@ -15,6 +15,14 @@ static Token currentToken;
 
 /*
 |--------------------------------------------------------------------------
+| PROTOTIPOS
+|--------------------------------------------------------------------------
+*/
+
+static ASTNode* parseStatement();
+
+/*
+|--------------------------------------------------------------------------
 | advanceToken()
 |--------------------------------------------------------------------------
 | Obtiene el siguiente token.
@@ -326,6 +334,94 @@ static ASTNode* parseExpression() {
 
 /*
 |--------------------------------------------------------------------------
+| parseBlock()
+|--------------------------------------------------------------------------
+| block:
+|
+| {
+|    statements
+| }
+|--------------------------------------------------------------------------
+*/
+
+static ASTNode* parseBlock() {
+
+    match(TOKEN_LBRACE);
+
+    ASTNode* block = createNode("BLOCK", "BLOCK");
+
+    ASTNode* current = NULL;
+
+    while (1) {
+
+        // FIN DEL BLOQUE
+        if (currentToken.type == TOKEN_RBRACE) {
+            break;
+        }
+
+        // ERROR: EOF antes de cerrar bloque
+        if (currentToken.type == TOKEN_EOF) {
+
+            syntaxError("Expected '}'");
+        }
+
+        ASTNode* stmt = parseStatement();
+
+        if (block->left == NULL) {
+
+            block->left = stmt;
+
+            current = stmt;
+        }
+        else {
+
+            current->next = stmt;
+
+            current = stmt;
+        }
+    }
+
+    match(TOKEN_RBRACE);
+
+    return block;
+}
+
+/*
+|--------------------------------------------------------------------------
+| parseIf()
+|--------------------------------------------------------------------------
+| if:
+|
+| if (expression) {
+|     statements
+| }
+|--------------------------------------------------------------------------
+*/
+
+static ASTNode* parseIf() {
+
+    ASTNode* ifNode = createNode("IF", "if");
+
+    // if
+    match(TOKEN_IF);
+
+    // (
+    match(TOKEN_LPAREN);
+
+    // condición
+    ifNode->left = parseExpression();
+
+    // )
+    match(TOKEN_RPAREN);
+
+    // bloque
+    ifNode->right = parseBlock();
+
+    return ifNode;
+}
+
+/*
+|--------------------------------------------------------------------------
 | parseAssignment()
 |--------------------------------------------------------------------------
 | assignment:
@@ -414,6 +510,11 @@ static ASTNode* parseDeclaration() {
 */
 
 static ASTNode* parseStatement() {
+    printf(
+        "[DEBUG] parseStatement -> token: '%s' line: %d\n",
+        currentToken.lexeme,
+        currentToken.line
+    );
 
     /*
     |--------------------------------------------------------------------------
@@ -428,6 +529,16 @@ static ASTNode* parseStatement() {
     ) {
 
         return parseDeclaration();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | IF
+    |--------------------------------------------------------------------------
+    */
+
+    if (currentToken.type == TOKEN_IF) {
+        return parseIf();
     }
 
     /*
@@ -485,21 +596,22 @@ ASTNode* parseProgram() {
 
     while (currentToken.type != TOKEN_EOF) {
 
-        ASTNode* statement = parseStatement();
+        ASTNode* stmt = parseStatement();
 
-        // PRIMER STATEMENT
+        // PRIMER NODO
         if (root->left == NULL) {
 
-            root->left = statement;
+            root->left = stmt;
 
-            current = statement;
+            current = stmt;
         }
+
+        // ENCADENAR STATEMENTS
         else {
 
-            // ENCADENAR SIGUIENTE
-            current->right = statement;
+            current->next = stmt;
 
-            current = statement;
+            current = stmt;
         }
     }
 

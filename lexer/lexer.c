@@ -46,7 +46,12 @@ void initLexer(const char* source) {
 |--------------------------------------------------------------------------
 */
 
-static char peek() {
+static unsigned char peek() {
+
+    // FIN DE CADENA
+    if (src[pos] == '\0') {
+        return '\0';
+    }
 
     return src[pos];
 }
@@ -74,18 +79,30 @@ static char advance() {
 
 static void skipSpaces() {
 
-    while (
-        peek() == ' '  ||
-        peek() == '\t' ||
-        peek() == '\n'
-    ) {
+    while (1) {
 
-        // Contar líneas
-        if (peek() == '\n') {
-            line++;
+        char c = peek();
+
+        // ESPACIOS
+        if (
+            c == ' '  ||
+            c == '\t' ||
+            c == '\n' ||
+            c == '\r'
+        ) {
+
+            // CONTAR LÍNEAS
+            if (c == '\n') {
+                line++;
+            }
+
+            advance();
         }
 
-        advance();
+        else {
+
+            break;
+        }
     }
 }
 
@@ -125,7 +142,7 @@ Token getNextToken() {
     // Ignorar espacios
     skipSpaces();
 
-    char c = peek();
+    unsigned char c = peek();
 
     /*
     |--------------------------------------------------------------------------
@@ -187,6 +204,9 @@ Token getNextToken() {
 
         if (strcmp(buffer, "do") == 0)
             return makeToken(TOKEN_DO, buffer);
+            
+        if (strcmp(buffer, "else") == 0)
+            return makeToken(TOKEN_ELSE, buffer);
 
         if (strcmp(buffer, "true") == 0)
             return makeToken(TOKEN_TRUE, buffer);
@@ -232,6 +252,7 @@ Token getNextToken() {
     |--------------------------------------------------------------------------
     */
 
+
     advance();
 
     switch (c) {
@@ -272,6 +293,12 @@ Token getNextToken() {
     | ERROR LÉXICO
     |--------------------------------------------------------------------------
     */
+   printf(
+    "[LEXER ERROR] Unknown character: ASCII(%d) '%c' at line %d\n",
+    c,
+    c,
+    line
+);
 
     return makeToken(TOKEN_ERROR, "ERROR");
 }

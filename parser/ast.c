@@ -21,6 +21,7 @@ ASTNode* createNode(const char* type, const char* value) {
 
     node->left = NULL;
     node->right = NULL;
+    node->next = NULL;
 
     return node;
 }

@@ -80,7 +80,15 @@ void semanticCheck(ASTNode* root) {
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | RECORRER ÁRBOL
+    |--------------------------------------------------------------------------
+    */
+
     semanticCheck(root->left);
 
     semanticCheck(root->right);
+
+    semanticCheck(root->next);
 }

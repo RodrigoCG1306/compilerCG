@@ -4,6 +4,7 @@
 
 #include "lexer/lexer.h"
 #include "parser/parser.h"
+#include "semantic/semantic.h"
 
 /*
 |--------------------------------------------------------------------------
@@ -123,6 +124,10 @@ int main(int argc, char* argv[]) {
     ASTNode* root = parseProgram();
 
     printf("Parsing completed successfully\n");
+
+    semanticCheck(root);
+
+    printf("Semantic analysis completed successfully\n");
 
     /*
     |--------------------------------------------------------------------------
