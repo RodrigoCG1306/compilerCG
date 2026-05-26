@@ -8,6 +8,10 @@
 #include "semantic/symbol_table.h" 
 
 ASTNode* programRoot = NULL;
+float returnValue = 0;
+int hasReturn = 0;
+ASTNode* findFunction(const char* name);
+void executeAST(ASTNode* node);
 
 /*
 |--------------------------------------------------------------------------
@@ -101,6 +105,61 @@ float evaluateExpression(ASTNode* node) {
     if (strcmp(node->type, "IDENTIFIER") == 0) {
 
         return getSymbolValue(node->value);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FUNCTION CALL
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        strcmp(node->type, "FUNCTION_CALL") == 0
+    ) {
+
+
+        ASTNode* function =
+            findFunction(node->value);
+
+        if (function == NULL) {
+
+            printf(
+                "Runtime Error: Function '%s' not found\n",
+                node->value
+            );
+
+            exit(1);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | RESETEAR RETURN
+        |--------------------------------------------------------------------------
+        */
+        returnValue = 0;
+
+        hasReturn = 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | EJECUTAR FUNCIÓN
+        |--------------------------------------------------------------------------
+        */
+
+        ASTNode* current =
+            function->left;
+
+        while (current != NULL) {
+
+            executeAST(current);
+
+            if (hasReturn)
+                break;
+
+            current = current->next;
+        }
+
+        return returnValue;
     }
 
     /*
@@ -280,6 +339,23 @@ void executeAST(ASTNode* node) {
     if (node == NULL)
         return;
 
+             /*
+            |--------------------------------------------------------------------------
+            | RETURN
+            |--------------------------------------------------------------------------
+            */
+
+            if (strcmp(node->type, "RETURN") == 0) {
+
+                returnValue =
+                    evaluateExpression(node->left);
+;
+
+                hasReturn = 1;
+
+                return;
+            }
+
 
             /*
             |--------------------------------------------------------------------------
@@ -364,7 +440,6 @@ void executeAST(ASTNode* node) {
             | BLOCK
             |--------------------------------------------------------------------------
             */
-
             if (strcmp(node->type, "BLOCK") == 0) {
 
                 ASTNode* current =
@@ -374,11 +449,15 @@ void executeAST(ASTNode* node) {
 
                     executeAST(current);
 
+                    if (hasReturn)
+                        return;
+
                     current = current->next;
                 }
 
                 return;
             }
+
             /*
             |--------------------------------------------------------------------------
             | FUNCTION CALL
@@ -409,7 +488,6 @@ void executeAST(ASTNode* node) {
 
     if (strcmp(node->type, "CGOUT") == 0) {
 
-
     /*
     |--------------------------------------------------------------------------
     | STRING
@@ -439,7 +517,6 @@ void executeAST(ASTNode* node) {
     executeAST(node->right);
     executeAST(node->extra);
     executeAST(node->extra2);
-    executeAST(node->next);
 }
 
 ASTNode* findMainFunction(ASTNode* root) {

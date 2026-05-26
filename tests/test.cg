@@ -1,9 +1,10 @@
 int suma()
 {
-    cgout(999);
+    return 10+5;
 }
 
 int elias()
 {
-    suma();
+    cgout(suma());
+
 }

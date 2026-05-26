@@ -27,6 +27,7 @@ static ASTNode* parseCgout();
 static ASTNode* parseMain();
 static ASTNode* parseExpression();
 static ASTNode* parseFunction();
+static ASTNode* parseReturn();
 
 /*
 |--------------------------------------------------------------------------
@@ -920,6 +921,23 @@ static ASTNode* parseFunctionCallStatement() {
     return node;
 }
 
+static ASTNode* parseReturn() {
+
+    match(TOKEN_RETURN);
+
+    ASTNode* node =
+        createNode(
+            "RETURN",
+            "return"
+        );
+
+    node->left =
+        parseExpression();
+
+    match(TOKEN_SEMICOLON);
+
+    return node;
+}
 
 static ASTNode* parseStatement() {
     /*printf(
@@ -995,6 +1013,11 @@ static ASTNode* parseStatement() {
     if (currentToken.type == TOKEN_CGOUT) {
 
         return parseCgout();
+    }
+
+    if (currentToken.type == TOKEN_RETURN) {
+
+        return parseReturn();
     }
 
     /*

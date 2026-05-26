@@ -288,7 +288,9 @@ Token getNextToken() {
 
         if (strcmp(buffer, "cgout") == 0)
             return makeToken(TOKEN_CGOUT, buffer);
-            
+        
+        if (strcmp(buffer, "return") == 0)
+            return makeToken(TOKEN_RETURN, buffer);
 
         /*
         |--------------------------------------------------------------------------
