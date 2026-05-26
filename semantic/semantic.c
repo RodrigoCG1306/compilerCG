@@ -26,8 +26,14 @@ static const char* getExpressionType(ASTNode* node) {
 
     if (strcmp(node->type, "NUMBER") == 0) {
 
-        return "int";
+    // SI TIENE PUNTO -> FLOAT
+    if (strchr(node->value, '.') != NULL) {
+
+        return "float";
     }
+
+    return "int";
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -160,6 +166,28 @@ void semanticCheck(ASTNode* root) {
             varName
         );
     }
+
+        /*
+        |--------------------------------------------------------------------------
+        | CGOUT
+        |--------------------------------------------------------------------------
+        */
+
+        if (strcmp(root->type, "CGOUT") == 0) {
+
+            if (
+                strcmp(root->left->type, "IDENTIFIER") == 0 &&
+                !symbolExists(root->left->value)
+            ) {
+
+                printf(
+                    "Semantic Error: Variable '%s' not declared\n",
+                    root->left->value
+                );
+
+                exit(1);
+            }
+        }
 
     /*
     |--------------------------------------------------------------------------

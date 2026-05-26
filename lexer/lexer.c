@@ -186,7 +186,13 @@ static Token makeToken(TokenType type, const char* lexeme) {
 
     token.type = type;
 
-    strcpy(token.lexeme, lexeme);
+    memset(token.lexeme, 0, sizeof(token.lexeme));
+
+    strncpy(
+        token.lexeme,
+        lexeme,
+        sizeof(token.lexeme) - 1
+    );
 
     token.line = line;
 
@@ -280,6 +286,10 @@ Token getNextToken() {
         if (strcmp(buffer, "false") == 0)
             return makeToken(TOKEN_FALSE, buffer);
 
+        if (strcmp(buffer, "cgout") == 0)
+            return makeToken(TOKEN_CGOUT, buffer);
+            
+
         /*
         |--------------------------------------------------------------------------
         | SI NO ES PALABRA RESERVADA
@@ -295,14 +305,23 @@ Token getNextToken() {
     | NÚMEROS
     |--------------------------------------------------------------------------
     */
-
     if (isdigit(c)) {
 
         char buffer[100];
 
         int i = 0;
 
-        while (isdigit(peek())) {
+        int hasDot = 0;
+
+        while (
+            isdigit(peek()) ||
+            (peek() == '.' && !hasDot)
+        ) {
+
+            if (peek() == '.') {
+
+                hasDot = 1;
+            }
 
             buffer[i++] = advance();
         }
@@ -314,10 +333,116 @@ Token getNextToken() {
 
     /*
     |--------------------------------------------------------------------------
-    | OPERADORES Y SÍMBOLOS
+    | OPERADORES RELACIONALES
     |--------------------------------------------------------------------------
     */
 
+    // <=
+    if (
+        c == '<' &&
+        src[pos + 1] == '='
+    ) {
+
+        advance();
+        advance();
+
+        return makeToken(
+            TOKEN_LTE,
+            "<="
+        );
+    }
+
+    // >=
+    if (
+        c == '>' &&
+        src[pos + 1] == '='
+    ) {
+
+        advance();
+        advance();
+
+        return makeToken(
+            TOKEN_GTE,
+            ">="
+        );
+    }
+
+    // ==
+    if (
+    c == '=' &&
+    src[pos + 1] == '='
+    ) {
+
+        advance();
+        advance();
+
+        return makeToken(
+            TOKEN_EQUAL,
+            "=="
+        );
+    }
+
+    // !=
+   if (
+        c == '!' &&
+        src[pos + 1] == '='
+    ) {
+
+        advance();
+        advance();
+
+        return makeToken(
+            TOKEN_NOT_EQUAL,
+            "!="
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | STRINGS
+    |--------------------------------------------------------------------------
+    */
+
+    if (src[pos] == '"') {
+
+        char buffer[256];
+
+        int i = 0;
+
+        // consumir "
+        pos++;
+
+        while (
+            src[pos] != '"' &&
+            src[pos] != '\0'
+        ) {
+
+            buffer[i++] = src[pos];
+
+            pos++;
+        }
+
+        buffer[i] = '\0';
+
+        // consumir "
+        if (src[pos] == '"') {
+            pos++;
+        }
+
+        Token token =
+            makeToken(
+                TOKEN_STRING,
+                buffer
+            );
+
+        return token;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | OPERADORES Y SÍMBOLOS
+    |--------------------------------------------------------------------------
+    */
 
     advance();
 
@@ -337,6 +462,12 @@ Token getNextToken() {
 
         case '=':
             return makeToken(TOKEN_ASSIGN, "=");
+
+        case '<':
+            return makeToken(TOKEN_LT, "<");
+
+        case '>':
+            return makeToken(TOKEN_GT, ">");
 
         case ';':
             return makeToken(TOKEN_SEMICOLON, ";");

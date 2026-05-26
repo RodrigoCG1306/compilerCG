@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "parser.h"
 
@@ -21,6 +22,9 @@ static Token currentToken;
 
 static ASTNode* parseStatement();
 static ASTNode* parseAssignmentNoSemicolon();
+static ASTNode* parseComparison();
+static ASTNode* parseCgout();
+static ASTNode* parseMain();
 
 /*
 |--------------------------------------------------------------------------
@@ -126,6 +130,12 @@ static const char* tokenToString(TokenType type) {
         case TOKEN_DO:
             return "do";
 
+        case TOKEN_CGOUT:
+            return "cgout";
+
+        case TOKEN_STRING:
+            return "string";
+
         case TOKEN_EOF:
             return "EOF";
 
@@ -230,6 +240,15 @@ static ASTNode* parseFactor() {
         );
 
         advanceToken();
+
+        return node;
+    }
+
+    if (currentToken.type == TOKEN_STRING) {
+        ASTNode* node =
+            createNode("STRING", currentToken.lexeme);
+
+        match(TOKEN_STRING);
 
         return node;
     }
@@ -351,6 +370,58 @@ static ASTNode* parseExpression() {
 
 /*
 |--------------------------------------------------------------------------
+| parseComparison()
+|--------------------------------------------------------------------------
+| Maneja:
+| <
+| >
+| <=
+| >=
+| ==
+| !=
+|--------------------------------------------------------------------------
+*/
+
+static ASTNode* parseComparison() {
+
+    ASTNode* left =
+        parseExpression();
+
+    if (
+
+        currentToken.type == TOKEN_LT  ||
+        currentToken.type == TOKEN_GT  ||
+        currentToken.type == TOKEN_LTE ||
+        currentToken.type == TOKEN_GTE ||
+        currentToken.type == TOKEN_EQUAL ||
+        currentToken.type == TOKEN_NOT_EQUAL
+    ) {
+
+        Token operatorToken =
+            currentToken;
+
+        advanceToken();
+
+        ASTNode* right =
+            parseExpression();
+
+        ASTNode* operatorNode =
+            createNode(
+                "COMPARISON",
+                operatorToken.lexeme
+            );
+
+        operatorNode->left = left;
+        operatorNode->right = right;
+
+        left = operatorNode;
+    }
+
+    return left;
+}
+
+/*
+|--------------------------------------------------------------------------
 | parseBlock()
 |--------------------------------------------------------------------------
 | block:
@@ -430,7 +501,7 @@ static ASTNode* parseIf() {
     match(TOKEN_LPAREN);
 
     // condición
-    ifNode->left = parseExpression();
+    ifNode->left = parseComparison();
 
     // )
     match(TOKEN_RPAREN);
@@ -479,7 +550,7 @@ static ASTNode* parseWhile() {
     match(TOKEN_LPAREN);
 
     // condición
-    whileNode->left = parseExpression();
+    whileNode->left = parseComparison();
 
     // )
     match(TOKEN_RPAREN);
@@ -544,7 +615,7 @@ static ASTNode* parseDoWhile() {
     |--------------------------------------------------------------------------
     */
 
-    node->left = parseExpression();
+    node->left = parseComparison();
 
     /*
     |--------------------------------------------------------------------------
@@ -606,7 +677,7 @@ static ASTNode* parseFor() {
     |--------------------------------------------------------------------------
     */
 
-    node->right = parseExpression();
+    node->right = parseComparison();
 
     match(TOKEN_SEMICOLON);
 
@@ -629,6 +700,30 @@ static ASTNode* parseFor() {
     */
 
     node->extra2 = parseBlock();
+
+    return node;
+}
+
+/*
+|--------------------------------------------------------------------------
+| parseCgout()
+|--------------------------------------------------------------------------
+| cgout("texto");
+|--------------------------------------------------------------------------
+*/
+
+static ASTNode* parseCgout() {
+
+    ASTNode* node =
+        createNode("CGOUT", "cgout");
+
+    match(TOKEN_CGOUT);
+    match(TOKEN_LPAREN);
+
+    node->left = parseExpression();
+
+    match(TOKEN_RPAREN);
+    match(TOKEN_SEMICOLON);
 
     return node;
 }
@@ -744,6 +839,7 @@ static ASTNode* parseDeclaration() {
     return node;
 }
 
+
 /*
 |--------------------------------------------------------------------------
 | parseStatement()
@@ -753,7 +849,7 @@ static ASTNode* parseDeclaration() {
 */
 
 static ASTNode* parseStatement() {
-   /* printf(
+    /*printf(
         "[DEBUG] parseStatement -> token: '%s' line: %d\n",
         currentToken.lexeme,
         currentToken.line
@@ -816,6 +912,17 @@ static ASTNode* parseStatement() {
 
         return parseFor();
     }
+    
+    /*
+    |--------------------------------------------------------------------------
+    | CGOUT
+    |--------------------------------------------------------------------------
+    */
+
+    if (currentToken.type == TOKEN_CGOUT) {
+
+        return parseCgout();
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -862,7 +969,60 @@ static ASTNode* parseStatement() {
         return NULL;
     }
 
+    syntaxError("Invalid statement");
+
     return NULL;
+}
+
+static ASTNode* parseMain() {
+
+    /*
+    |--------------------------------------------------------------------------
+    | int
+    |--------------------------------------------------------------------------
+    */
+
+    match(TOKEN_INT);
+
+    /*
+    |--------------------------------------------------------------------------
+    | elias
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        strcmp(currentToken.lexeme, "elias") != 0
+    ) {
+
+        syntaxError(
+            "Expected 'elias()'"
+        );
+    }
+
+    match(TOKEN_IDENTIFIER);
+
+    /*
+    |--------------------------------------------------------------------------
+    | ()
+    |--------------------------------------------------------------------------
+    */
+
+    match(TOKEN_LPAREN);
+    match(TOKEN_RPAREN);
+
+    /*
+    |--------------------------------------------------------------------------
+    | BLOQUE
+    |--------------------------------------------------------------------------
+    */
+
+    ASTNode* node =
+        createNode("MAIN", "elias");
+
+    node->left =
+        parseBlock();
+
+    return node;
 }
 
 /*
@@ -877,32 +1037,28 @@ ASTNode* parseProgram() {
 
     advanceToken();
 
-    ASTNode* root = createNode("PROGRAM", "ROOT");
+    ASTNode* root =
+        createNode("PROGRAM", "ROOT");
 
-    ASTNode* current = NULL;
+    /*
+    |--------------------------------------------------------------------------
+    | MAIN OBLIGATORIO
+    |--------------------------------------------------------------------------
+    */
 
-    while (
-        currentToken.type != TOKEN_EOF &&
-        currentToken.type != TOKEN_ERROR
-    ) {
+    root->left = parseMain();
 
-        ASTNode* stmt = parseStatement();
+    /*
+    |--------------------------------------------------------------------------
+    | NO DEBE HABER MÁS CÓDIGO
+    |--------------------------------------------------------------------------
+    */
 
-        // PRIMER NODO
-        if (root->left == NULL) {
+    if (currentToken.type != TOKEN_EOF) {
 
-            root->left = stmt;
-
-            current = stmt;
-        }
-
-        // ENCADENAR STATEMENTS
-        else {
-
-            current->next = stmt;
-
-            current = stmt;
-        }
+        syntaxError(
+            "Unexpected code after elias()"
+        );
     }
 
     return root;

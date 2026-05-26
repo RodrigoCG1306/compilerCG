@@ -17,6 +17,8 @@ typedef struct {
 
     char type[20];
 
+    float numberValue;
+
 } Symbol;
 
 /*
@@ -30,5 +32,20 @@ void addSymbol(const char* name, const char* type);
 int symbolExists(const char* name);
 
 const char* getSymbolType(const char* name);
+
+/*
+|--------------------------------------------------------------------------
+| VALORES
+|--------------------------------------------------------------------------
+*/
+
+void setSymbolValue(
+    const char* name,
+    float value
+);
+
+float getSymbolValue(
+    const char* name
+);
 
 #endif

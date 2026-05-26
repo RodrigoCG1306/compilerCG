@@ -22,6 +22,10 @@ typedef enum {
     TOKEN_WHILE,
     TOKEN_FOR,
     TOKEN_DO,
+    TOKEN_CGOUT,
+    TOKEN_STRING,
+    TOKEN_VOID,
+    TOKEN_RETURN,
 
     // VALORES BOOLEANOS
     TOKEN_TRUE,
@@ -40,6 +44,12 @@ typedef enum {
     TOKEN_MULT,
     TOKEN_DIV,
     TOKEN_ASSIGN,
+    TOKEN_LT,
+    TOKEN_GT,
+    TOKEN_LTE,
+    TOKEN_GTE,
+    TOKEN_EQUAL,
+    TOKEN_NOT_EQUAL,
 
     // SÍMBOLOS
     TOKEN_SEMICOLON,

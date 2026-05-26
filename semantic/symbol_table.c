@@ -71,3 +71,34 @@ const char* getSymbolType(const char* name) {
 
     return "undefined";
 }
+
+void setSymbolValue(
+    const char* name,
+    float value
+) {
+
+    for (int i = 0; i < count; i++) {
+
+        if (strcmp(table[i].name, name) == 0) {
+
+            table[i].numberValue = value;
+
+            return;
+        }
+    }
+}
+
+float getSymbolValue(
+    const char* name
+) {
+
+    for (int i = 0; i < count; i++) {
+
+        if (strcmp(table[i].name, name) == 0) {
+
+            return table[i].numberValue;
+        }
+    }
+
+    return 0;
+}
