@@ -7,6 +7,8 @@
 #include "semantic/semantic.h" 
 #include "semantic/symbol_table.h" 
 
+ASTNode* programRoot = NULL;
+
 /*
 |--------------------------------------------------------------------------
 | readFile()
@@ -252,10 +254,32 @@ int evaluateComparison(ASTNode* node) {
     return 0;
 }
 
+ASTNode* findFunction(const char* name) {
+
+    ASTNode* current =
+        programRoot->left;
+
+    while (current != NULL) {
+
+        if (
+            strcmp(current->type, "FUNCTION") == 0 &&
+            strcmp(current->value, name) == 0
+        ) {
+
+            return current;
+        }
+
+        current = current->next;
+    }
+
+    return NULL;
+}
+
 void executeAST(ASTNode* node) {
 
     if (node == NULL)
         return;
+
 
             /*
             |--------------------------------------------------------------------------
@@ -335,7 +359,56 @@ void executeAST(ASTNode* node) {
                 return;
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | BLOCK
+            |--------------------------------------------------------------------------
+            */
+
+            if (strcmp(node->type, "BLOCK") == 0) {
+
+                ASTNode* current =
+                    node->left;
+
+                while (current != NULL) {
+
+                    executeAST(current);
+
+                    current = current->next;
+                }
+
+                return;
+            }
+            /*
+            |--------------------------------------------------------------------------
+            | FUNCTION CALL
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                strcmp(node->type, "FUNCTION_CALL") == 0
+            ) {
+
+                ASTNode* function =
+                    findFunction(node->value);
+
+                if (function == NULL) {
+
+                    printf(
+                        "Runtime Error: Function '%s' not found\n",
+                        node->value
+                    );
+
+                    exit(1);
+                }
+
+                executeAST(function->left);
+
+                return;
+            }
+
     if (strcmp(node->type, "CGOUT") == 0) {
+
 
     /*
     |--------------------------------------------------------------------------
@@ -359,6 +432,7 @@ void executeAST(ASTNode* node) {
         printf("%g\n",
             evaluateExpression(node->left));
     }
+    return;
 }
 
     executeAST(node->left);
@@ -366,6 +440,26 @@ void executeAST(ASTNode* node) {
     executeAST(node->extra);
     executeAST(node->extra2);
     executeAST(node->next);
+}
+
+ASTNode* findMainFunction(ASTNode* root) {
+
+    ASTNode* current = root->left;
+
+    while (current != NULL) {
+
+        if (
+            strcmp(current->type, "FUNCTION") == 0 &&
+            strcmp(current->value, "elias") == 0
+        ) {
+
+            return current;
+        }
+
+        current = current->next;
+    }
+
+    return NULL;
 }
 
 /*
@@ -421,13 +515,40 @@ int main(int argc, char* argv[]) {
     initLexer(source);
 
     ASTNode* root = parseProgram();
+    programRoot = root;
+    
 
     printf("Parsing completed successfully\n");
 
     semanticCheck(root);
 
     printf("Semantic analysis completed successfully\n");
-    executeAST(root);
+
+    /*
+    |--------------------------------------------------------------------------
+    | BUSCAR elias()
+    |--------------------------------------------------------------------------
+    */
+
+    ASTNode* mainFunction =
+        findMainFunction(root);
+
+    if (mainFunction == NULL) {
+
+        printf(
+            "Runtime Error: No elias() function found\n"
+        );
+
+        return 1;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | EJECUTAR BODY DE elias()
+    |--------------------------------------------------------------------------
+    */
+
+    executeAST(mainFunction->left);
 
     /*
     |--------------------------------------------------------------------------

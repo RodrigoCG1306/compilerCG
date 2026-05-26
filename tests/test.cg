@@ -1,10 +1,9 @@
-int elias ()
+int suma()
 {
-    int x;
-x=1;
-while(x<5)
-{
-    cgout(x);
-    x = x + 1;
+    cgout(999);
 }
+
+int elias()
+{
+    suma();
 }

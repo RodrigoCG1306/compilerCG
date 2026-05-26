@@ -25,6 +25,8 @@ static ASTNode* parseAssignmentNoSemicolon();
 static ASTNode* parseComparison();
 static ASTNode* parseCgout();
 static ASTNode* parseMain();
+static ASTNode* parseExpression();
+static ASTNode* parseFunction();
 
 /*
 |--------------------------------------------------------------------------
@@ -231,15 +233,45 @@ static ASTNode* parseFactor() {
         return node;
     }
 
-    // IDENTIFICADOR
+    // IDENTIFICADOR O LLAMADA A FUNCIÓN
     if (currentToken.type == TOKEN_IDENTIFIER) {
+
+        char name[50];
+
+        strcpy(name, currentToken.lexeme);
+
+        advanceToken();
+
+        /*
+        |--------------------------------------------------------------------------
+        | LLAMADA A FUNCIÓN
+        |--------------------------------------------------------------------------
+        */
+
+        if (currentToken.type == TOKEN_LPAREN) {
+
+            match(TOKEN_LPAREN);
+            match(TOKEN_RPAREN);
+
+            ASTNode* callNode =
+                createNode(
+                    "FUNCTION_CALL",
+                    name
+                );
+
+            return callNode;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | VARIABLE
+        |--------------------------------------------------------------------------
+        */
 
         node = createNode(
             "IDENTIFIER",
-            currentToken.lexeme
+            name
         );
-
-        advanceToken();
 
         return node;
     }
@@ -265,6 +297,24 @@ static ASTNode* parseFactor() {
         );
 
         advanceToken();
+
+        return node;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PARÉNTESIS
+    |--------------------------------------------------------------------------
+    */
+
+    if (currentToken.type == TOKEN_LPAREN) {
+
+        match(TOKEN_LPAREN);
+
+        ASTNode* node =
+            parseExpression();
+
+        match(TOKEN_RPAREN);
 
         return node;
     }
@@ -848,6 +898,29 @@ static ASTNode* parseDeclaration() {
 |--------------------------------------------------------------------------
 */
 
+static ASTNode* parseFunctionCallStatement() {
+
+    char name[50];
+
+    strcpy(name, currentToken.lexeme);
+
+    match(TOKEN_IDENTIFIER);
+
+    match(TOKEN_LPAREN);
+    match(TOKEN_RPAREN);
+
+    match(TOKEN_SEMICOLON);
+
+    ASTNode* node =
+        createNode(
+            "FUNCTION_CALL",
+            name
+        );
+
+    return node;
+}
+
+
 static ASTNode* parseStatement() {
     /*printf(
         "[DEBUG] parseStatement -> token: '%s' line: %d\n",
@@ -932,7 +1005,60 @@ static ASTNode* parseStatement() {
 
     if (currentToken.type == TOKEN_IDENTIFIER) {
 
-        return parseAssignment();
+        char name[50];
+
+        strcpy(name, currentToken.lexeme);
+
+        match(TOKEN_IDENTIFIER);
+
+        /*
+        |--------------------------------------------------------------------------
+        | FUNCIÓN
+        |--------------------------------------------------------------------------
+        */
+
+        if (currentToken.type == TOKEN_LPAREN) {
+
+            match(TOKEN_LPAREN);
+            match(TOKEN_RPAREN);
+
+            match(TOKEN_SEMICOLON);
+
+            ASTNode* node =
+                createNode(
+                    "FUNCTION_CALL",
+                    name
+                );
+
+            return node;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ASIGNACIÓN
+        |--------------------------------------------------------------------------
+        */
+
+        match(TOKEN_ASSIGN);
+
+        ASTNode* node =
+            createNode(
+                "ASSIGNMENT",
+                "="
+            );
+
+        node->left =
+            createNode(
+                "IDENTIFIER",
+                name
+            );
+
+        node->right =
+            parseExpression();
+
+        match(TOKEN_SEMICOLON);
+
+        return node;
     }
 
     /*
@@ -972,6 +1098,83 @@ static ASTNode* parseStatement() {
     syntaxError("Invalid statement");
 
     return NULL;
+}
+
+static ASTNode* parseFunction() {
+
+    /*
+    |--------------------------------------------------------------------------
+    | TIPO
+    |--------------------------------------------------------------------------
+    */
+
+    char returnType[20];
+
+    strcpy(
+        returnType,
+        currentToken.lexeme
+    );
+
+    advanceToken();
+
+    /*
+    |--------------------------------------------------------------------------
+    | NOMBRE
+    |--------------------------------------------------------------------------
+    */
+
+    char functionName[50];
+
+    strcpy(
+        functionName,
+        currentToken.lexeme
+    );
+
+    match(TOKEN_IDENTIFIER);
+
+    /*
+    |--------------------------------------------------------------------------
+    | ()
+    |--------------------------------------------------------------------------
+    */
+
+    match(TOKEN_LPAREN);
+    match(TOKEN_RPAREN);
+
+    /*
+    |--------------------------------------------------------------------------
+    | FUNCIÓN
+    |--------------------------------------------------------------------------
+    */
+
+    ASTNode* node =
+        createNode(
+            "FUNCTION",
+            functionName
+        );
+
+    /*
+    |--------------------------------------------------------------------------
+    | RETURN TYPE
+    |--------------------------------------------------------------------------
+    */
+
+    node->extra =
+        createNode(
+            "TYPE",
+            returnType
+        );
+
+    /*
+    |--------------------------------------------------------------------------
+    | BODY
+    |--------------------------------------------------------------------------
+    */
+
+    node->left =
+        parseBlock();
+
+    return node;
 }
 
 static ASTNode* parseMain() {
@@ -1040,25 +1243,40 @@ ASTNode* parseProgram() {
     ASTNode* root =
         createNode("PROGRAM", "ROOT");
 
-    /*
-    |--------------------------------------------------------------------------
-    | MAIN OBLIGATORIO
-    |--------------------------------------------------------------------------
-    */
+    ASTNode* current = NULL;
 
-    root->left = parseMain();
+    while (
+        currentToken.type != TOKEN_EOF
+    ) {
 
-    /*
-    |--------------------------------------------------------------------------
-    | NO DEBE HABER MÁS CÓDIGO
-    |--------------------------------------------------------------------------
-    */
+        ASTNode* func =
+            parseFunction();
 
-    if (currentToken.type != TOKEN_EOF) {
+        /*
+        |--------------------------------------------------------------------------
+        | PRIMERA FUNCIÓN
+        |--------------------------------------------------------------------------
+        */
 
-        syntaxError(
-            "Unexpected code after elias()"
-        );
+        if (root->left == NULL) {
+
+            root->left = func;
+
+            current = func;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ENCADENAR
+        |--------------------------------------------------------------------------
+        */
+
+        else {
+
+            current->next = func;
+
+            current = func;
+        }
     }
 
     return root;
