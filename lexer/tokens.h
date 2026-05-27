@@ -53,6 +53,7 @@ typedef enum {
 
     // SÍMBOLOS
     TOKEN_SEMICOLON,
+    TOKEN_COMMA,
     TOKEN_LPAREN,
     TOKEN_RPAREN,
     TOKEN_LBRACE,

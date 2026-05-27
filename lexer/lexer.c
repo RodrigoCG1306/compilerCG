@@ -485,6 +485,9 @@ Token getNextToken() {
 
         case '}':
             return makeToken(TOKEN_RBRACE, "}");
+
+        case ',':
+            return makeToken(TOKEN_COMMA, ",");
     }
 
     /*

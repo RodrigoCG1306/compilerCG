@@ -121,6 +121,62 @@ float evaluateExpression(ASTNode* node) {
         ASTNode* function =
             findFunction(node->value);
 
+        /*
+        |--------------------------------------------------------------------------
+        | PARÁMETROS Y ARGUMENTOS
+        |--------------------------------------------------------------------------
+        */
+
+        ASTNode* param =
+            function->extra2;
+
+        ASTNode* arg =
+            node->left;
+
+        while (
+            param != NULL &&
+            arg != NULL
+        ) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | EVALUAR ARGUMENTO
+            |--------------------------------------------------------------------------
+            */
+
+            float value =
+                evaluateExpression(arg);
+
+            /*
+            |--------------------------------------------------------------------------
+            | CREAR VARIABLE SI NO EXISTE
+            |--------------------------------------------------------------------------
+            */
+
+            if (!symbolExists(param->value)) {
+
+                addSymbol(
+                    param->value,
+                    param->extra->value
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | ASIGNAR VALOR
+            |--------------------------------------------------------------------------
+            */
+
+            setSymbolValue(
+                param->value,
+                value
+            );
+
+            param = param->next;
+
+            arg = arg->next;
+        }
+
         if (function == NULL) {
 
             printf(

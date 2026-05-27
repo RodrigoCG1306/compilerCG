@@ -252,6 +252,62 @@ static ASTNode* parseFactor() {
         if (currentToken.type == TOKEN_LPAREN) {
 
             match(TOKEN_LPAREN);
+
+            /*
+            |--------------------------------------------------------------------------
+            | ARGUMENTOS
+            |--------------------------------------------------------------------------
+            */
+
+            ASTNode* argList = NULL;
+
+            ASTNode* currentArg = NULL;
+
+            if (currentToken.type != TOKEN_RPAREN) {
+
+                while (1) {
+
+                    ASTNode* arg =
+                        parseExpression();
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | ENCADENAR
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (argList == NULL) {
+
+                        argList = arg;
+
+                        currentArg = arg;
+                    }
+
+                    else {
+
+                        currentArg->next = arg;
+
+                        currentArg = arg;
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | MÁS ARGUMENTOS
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (currentToken.type == TOKEN_COMMA) {
+
+                        match(TOKEN_COMMA);
+                    }
+
+                    else {
+
+                        break;
+                    }
+                }
+            }
+
             match(TOKEN_RPAREN);
 
             ASTNode* callNode =
@@ -259,6 +315,8 @@ static ASTNode* parseFactor() {
                     "FUNCTION_CALL",
                     name
                 );
+
+            callNode->left = argList;
 
             return callNode;
         }
@@ -1162,6 +1220,107 @@ static ASTNode* parseFunction() {
     */
 
     match(TOKEN_LPAREN);
+
+    /*
+    |--------------------------------------------------------------------------
+    | PARÁMETROS
+    |--------------------------------------------------------------------------
+    */
+
+    ASTNode* paramList = NULL;
+
+    ASTNode* currentParam = NULL;
+
+    if (currentToken.type != TOKEN_RPAREN) {
+
+        while (1) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | TIPO
+            |--------------------------------------------------------------------------
+            */
+
+            char paramType[20];
+
+            strcpy(
+                paramType,
+                currentToken.lexeme
+            );
+
+            advanceToken();
+
+            /*
+            |--------------------------------------------------------------------------
+            | NOMBRE
+            |--------------------------------------------------------------------------
+            */
+
+            char paramName[50];
+
+            strcpy(
+                paramName,
+                currentToken.lexeme
+            );
+
+            match(TOKEN_IDENTIFIER);
+
+            /*
+            |--------------------------------------------------------------------------
+            | PARAM NODE
+            |--------------------------------------------------------------------------
+            */
+
+            ASTNode* param =
+                createNode(
+                    "PARAM",
+                    paramName
+                );
+
+            param->extra =
+                createNode(
+                    "TYPE",
+                    paramType
+                );
+
+            /*
+            |--------------------------------------------------------------------------
+            | ENCADENAR
+            |--------------------------------------------------------------------------
+            */
+
+            if (paramList == NULL) {
+
+                paramList = param;
+
+                currentParam = param;
+            }
+
+            else {
+
+                currentParam->next = param;
+
+                currentParam = param;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | MÁS PARÁMETROS
+            |--------------------------------------------------------------------------
+            */
+
+            if (currentToken.type == TOKEN_COMMA) {
+
+                match(TOKEN_COMMA);
+            }
+
+            else {
+
+                break;
+            }
+        }
+    }
+
     match(TOKEN_RPAREN);
 
     /*
@@ -1187,6 +1346,7 @@ static ASTNode* parseFunction() {
             "TYPE",
             returnType
         );
+    node->extra2 = paramList;
 
     /*
     |--------------------------------------------------------------------------
